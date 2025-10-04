@@ -18,7 +18,7 @@ HeadphoneHub is designed as a feature-rich website to promote premium headphones
 ## Demo
 
 Check out the live demo:  
-[https://akarshyash.github.io/MyDigital-Card](https://akarshyash.github.io/MyDigital-Card
+https://akarshyash.github.io/HeadphoneHub/
 
 Explore the repository:  
 [https://github.com/AkarshYash/HeadphoneHub](https://github.com/AkarshYash/HeadphoneHub)

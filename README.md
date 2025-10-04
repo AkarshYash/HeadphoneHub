@@ -56,3 +56,9 @@ This project is open-source and available under the [MIT License](LICENSE).
 
 For more projects, visit the [portfolio site](https://akarshyash.github.io/MyDigital-Card).
 
+## Demo Screen Recording 
+
+
+https://github.com/user-attachments/assets/07ae9f2b-9b6c-4059-a701-42677c926cfe
+
+

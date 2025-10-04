@@ -1,90 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeadphoneHub | Premium Headphones</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Catamaran:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1a1a2e;
+            --secondary-color: #16213e;
+            --accent-color: #0f3460;
+            --highlight-color: #e94560;
+            --light-color: #f1f1f1;
+            --text-dark: #333;
+            --text-light: #fff;
+            --gradient: linear-gradient(135deg, var(--accent-color), var(--highlight-color));
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+            --nav-bg: rgba(255, 255, 255, 0.95);
+            --bg-color: #ffffff;
+            --card-bg: #ffffff;
+        }
 
+        [data-theme="dark"] {
+            --primary-color: #0a0a0a;
+            --secondary-color: #1a1a1a;
+            --accent-color: #00b894;
+            --highlight-color: #00cec9;
+            --light-color: #2d3436;
+            --text-dark: #ffffff;
+            --text-light: #ffffff;
+            --gradient: linear-gradient(135deg, #00b894, #00cec9);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            --nav-bg: rgba(10, 10, 10, 0.95);
+            --bg-color: #0a0a0a;
+            --card-bg: #1a1a1a;
+        }
 
-import imaplib
-import email
-import re
-import requests
-from bs4 import BeautifulSoup
-from urllib.parse import urlparse
-import logging
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-# --- Configurations ---
-EMAIL_HOST = 'imap.gmail.com'
-EMAIL_PORT = 993
-EMAIL_USER = 'your_email@gmail.com'
-EMAIL_PASS = 'your_app_password'
-VIRUSTOTAL_API_KEY = 'your_virustotal_api_key'
-LOG_FILE = 'phishing_logs.txt'
+        body {
+            font-family: 'Catamaran', sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            font-size: 1.1rem;
+            overflow-x: hidden;
+            background-color: var(--bg-color);
+            transition: var(--transition);
+        }
 
-# --- Setup Logging ---
-logging.basicConfig(filename=LOG_FILE, level=logging.INFO, 
-                    format='%(asctime)s:%(levelname)s:%(message)s')
+        h1, h2, h3, h4 {
+            line-height: 1.3;
+            font-weight: 700;
+        }
 
-# --- Utility Functions ---
-def extract_urls_from_email(msg):
-    urls = set()
-    if msg.is_multipart():
-        for part in msg.walk():
-            content_type = part.get_content_type()
-            if content_type == 'text/html':
-                html = part.get_payload(decode=True).decode(errors='ignore')
-                soup = BeautifulSoup(html, 'html.parser')
-                for link in soup.find_all('a', href=True):
-                    urls.add(link['href'])
-    return list(urls)
+        a {
+            color: inherit;
+            text-decoration: none;
+            transition: var(--transition);
+        }
 
-def is_url_suspicious(url):
-    parsed = urlparse(url)
-    if not parsed.scheme.startswith("http"):
-        return False
-    if len(parsed.netloc.split('.')) < 2:
-        return True
-    if any(keyword in url.lower() for keyword in ['login', 'verify', 'update', 'secure']):
-        return True
-    return False
+        ul {
+            list-style: none;
+        }
 
-def check_virustotal(url):
-    headers = {'x-apikey': VIRUSTOTAL_API_KEY}
-    response = requests.post("https://www.virustotal.com/api/v3/urls", 
-                             headers=headers, 
-                             data={"url": url})
-    if response.status_code == 200:
-        url_id = response.json()['data']['id']
-        report = requests.get(f"https://www.virustotal.com/api/v3/urls/{url_id}", headers=headers)
-        if report.status_code == 200:
-            verdict = report.json()['data']['attributes']['last_analysis_stats']
-            if verdict['malicious'] > 0 or verdict['suspicious'] > 0:
-                return True
-    return False
+        img {
+            width: 100%;
+            display: block;
+        }
 
-# --- Email Scanner ---
-def scan_emails():
-    mail = imaplib.IMAP4_SSL(EMAIL_HOST, EMAIL_PORT)
-    mail.login(EMAIL_USER, EMAIL_PASS)
-    mail.select("inbox")
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 0 2rem;
+        }
 
-    _, message_nums = mail.search(None, 'ALL')
-    for num in message_nums[0].split():
-        _, data = mail.fetch(num, '(RFC822)')
-        msg = email.message_from_bytes(data[0][1])
+        .btn {
+            display: inline-block;
+            background: var(--gradient);
+            color: var(--text-light);
+            padding: 0.8rem 1.8rem;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            border-radius: 30px;
+            font-weight: 600;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
 
-        subject = msg.get("Subject", "(No Subject)")
-        sender = msg.get("From", "Unknown")
-        urls = extract_urls_from_email(msg)
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.2);
+        }
 
-        for url in urls:
-            if is_url_suspicious(url):
-                try:
-                    if check_virustotal(url):
-                        log = f"Phishing detected! Subject: {subject}, From: {sender}, URL: {url}"
-                        print(log)
-                        logging.warning(log)
-                except Exception as e:
-                    logging.error(f"Error checking URL {url}: {str(e)}")
+        .btn:active {
+            transform: translateY(-1px);
+        }
 
-    mail.logout()
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.4s ease;
+        }
 
-if __name__ == "__main__":
-    print("🚨 Starting Phishing Email Deactivation Tool...")
-    scan_emails()
-    print("✅ Scan complete. Check logs for details.")
+        .btn:hover::after {
+            transform: translateX(0);
+        }
+
+        .btn-small {
+            padding: 0.6rem 1.5rem;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+        }
+
+        .btn-center {
+            display: block;
+            margin: 2rem auto 0;
+            text-align: center;
+            max-width: 250px;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background: var(--gradient);
+            border-radius: 2px;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            background: var(--gradient);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .theme-toggle .sun {
+            display: none;
+        }
+
+        [data-theme="dark"] .theme-toggle .sun {
+            display: block;
+        }
+
+        [data-theme="dark"] .theme-toggle .moon {
+            display: none;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: var(--nav-bg);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            transition: var(--transition);
+        }
+
+        .navbar.scrolled {
+            background: var(--nav-bg);
+            padding: 0.5rem 0;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo i {
+            margin-right: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+        }
+
+        .nav li {
+            margin-left: 2rem;
+        }
+
+        .nav a {
+            font-weight: 600;
+            position: relative;
+            padding: 0.5rem 0;
+        }
+
+        .nav a::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--gradient);
+            transition: width 0.3s ease;
+        }
+
+        .nav a:hover::after {
+            width: 100%;
+        }
+
+        .nav .btn {
+            margin-left: 1rem;
+            padding: 0.6rem 1.2rem;
+            font-size: 1rem;
+        }
+
+        .hamburger {
+            display: none;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            padding: 0.5rem;
+        }
+
+        /* Showcase */
+        .section-showcase {
+            padding: 10rem 0 5rem;
+            background: linear-gradient(135deg, var(--light-color) 0%, var(--card-bg) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section-showcase::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 80%;
+            height: 200%;
+            background: var(--gradient);
+            border-radius: 50%;
+            opacity: 0.05;
+            transform: rotate(15deg);
+        }
+
+        .section-showcase .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .showcase-content h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .showcase-content p {
+            margin-bottom: 2rem;
+            font-size: 1.2rem;
+            color: var(--text-dark);
+            opacity: 0.8;
+        }
+
+        .showcase-image {
+            position: relative;
+            transform: translateY(0);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0); }
+        }
+
+        .showcase-image::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            height: 80%;
+            background: var(--gradient);
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.3;
+            z-index: -1;
+        }
+
+        /* Features */
+        .section-features {
+            padding: 6rem 0;
+            background: var(--light-color);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            padding: 2.5rem 2rem;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: var(--gradient);
+            z-index: 2;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .feature-card h3 {
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .feature-card p {
+            flex-grow: 1;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Large Text */
+        .section-large-text {
+            position: relative;
+            background: url("https://images.unsplash.com/photo-1593121925328-369cc8459c08?q=80&w=2070") center/cover no-repeat;
+            height: 70vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            overflow: hidden;
+        }
+
+        .section-large-text::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(15, 52, 96, 0.8) 0%, rgba(233, 69, 96, 0.7) 100%);
+        }
+
+        [data-theme="dark"] .section-large-text::before {
+            background: linear-gradient(135deg, rgba(0, 184, 148, 0.8) 0%, rgba(0, 206, 201, 0.7) 100%);
+        }
+
+        .section-large-text-inner {
+            position: relative;
+            z-index: 2;
+            color: white;
+            max-width: 800px;
+            padding: 0 2rem;
+        }
+
+        .section-large-text-inner h3 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .section-large-text-inner h2 {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .section-large-text-inner p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+        }
+
+        /* Gallery */
+        .section-gallery {
+            padding: 6rem 0;
+            background: var(--light-color);
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-auto-rows: 250px;
+            gap: 1rem;
+        }
+
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.03);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .gallery-item img {
+            height: 100%;
+            object-fit: cover;
+            transition: var(--transition);
+        }
+
+        .gallery-item:hover img {
+            transform: scale(1.1);
+        }
+
+        .gallery-item:nth-child(1) {
+            grid-column: span 2;
+            grid-row: span 2;
+        }
+
+        .gallery-item:nth-child(2) {
+            grid-column: span 2;
+        }
+
+        .gallery-actions {
+            text-align: center;
+            margin-top: 3rem;
+        }
+
+        /* Testimonials */
+        .section-testimonials {
+            padding: 6rem 0;
+            background: var(--card-bg);
+        }
+
+        .testimonials-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .testimonial {
+            background: var(--light-color);
+            padding: 2.5rem;
+            border-radius: 15px;
+            box-shadow: var(--shadow);
+            text-align: center;
+            margin: 0 1rem;
+            position: relative;
+        }
+
+        .testimonial::before {
+            content: '"';
+            position: absolute;
+            top: -20px;
+            left: 20px;
+            font-size: 6rem;
+            color: var(--accent-color);
+            opacity: 0.2;
+            font-family: Georgia, serif;
+            line-height: 1;
+        }
+
+        .testimonial-text {
+            font-size: 1.2rem;
+            font-style: italic;
+            margin-bottom: 1.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .author-image {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin-right: 1rem;
+            border: 3px solid var(--accent-color);
+        }
+
+        .author-info h4 {
+            margin-bottom: 0.2rem;
+        }
+
+        .author-info p {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+
+        .testimonials-actions {
+            text-align: center;
+            margin-top: 3rem;
+        }
+
+        /* Footer */
+        .section-footer {
+            background: var(--primary-color);
+            color: var(--text-light);
+            padding: 5rem 0 2rem;
+        }
+
+        .footer-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2rem;
+        }
+
+        .footer-col h3 {
+            margin-bottom: 1.5rem;
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+
+        .footer-col h3::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 40px;
+            height: 2px;
+            background: var(--highlight-color);
+        }
+
+        .footer-col p {
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .social-links a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .social-links a:hover {
+            background: var(--highlight-color);
+            transform: translateY(-3px);
+        }
+
+        .social-links a span {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .footer-col ul li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-col ul li a {
+            opacity: 0.8;
+            transition: var(--transition);
+        }
+
+        .footer-col ul li a:hover {
+            opacity: 1;
+            padding-left: 5px;
+        }
+
+        .email-form {
+            display: flex;
+            margin-top: 1rem;
+        }
+
+        .email-form input {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border: none;
+            border-radius: 30px 0 0 30px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .email-form input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .email-form button {
+            padding: 0 1.5rem;
+            border: none;
+            border-radius: 0 30px 30px 0;
+            background: var(--highlight-color);
+            color: white;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .email-form button:hover {
+            background: #ff2e4f;
+        }
+
+        [data-theme="dark"] .email-form button:hover {
+            background: var(--accent-color);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        /* Developer Contact */
+        .developer-contact {
+            text-align: center;
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .developer-contact h3 {
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .developer-contact p {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .contact-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin: 1.5rem 0;
+        }
+
+        .contact-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--gradient);
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: var(--transition);
+        }
+
+        .contact-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .developer-email {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .developer-email a {
+            color: var(--highlight-color);
+            text-decoration: none;
+        }
+
+        .developer-email a:hover {
+            text-decoration: underline;
+        }
+
+        /* Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .fade-in.appear {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Media Queries */
+        @media (max-width: 992px) {
+            .section-showcase .container {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .showcase-content h1 {
+                font-size: 2.8rem;
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .footer-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .section-large-text-inner h2 {
+                font-size: 3rem;
+            }
+
+            .contact-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .contact-btn {
+                width: 100%;
+                max-width: 250px;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .theme-toggle {
+                top: 15px;
+                right: 15px;
+                width: 45px;
+                height: 45px;
+            }
+
+            .hamburger {
+                display: block;
+            }
+
+            .nav {
+                position: fixed;
+                top: 70px;
+                left: 0;
+                width: 100%;
+                background: var(--nav-bg);
+                flex-direction: column;
+                align-items: center;
+                padding: 2rem 0;
+                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+                transform: translateY(-100%);
+                opacity: 0;
+                transition: var(--transition);
+                z-index: 999;
+            }
+
+            .nav.active {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            .nav li {
+                margin: 1rem 0;
+            }
+
+            .nav .btn {
+                margin-left: 0;
+                margin-top: 1rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .gallery {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .section-large-text-inner h2 {
+                font-size: 2.5rem;
+            }
+
+            .section-large-text-inner p {
+                font-size: 1.1rem;
+            }
+
+            .footer-container {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .social-links {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .showcase-content h1 {
+                font-size: 2.2rem;
+            }
+
+            .gallery {
+                grid-template-columns: 1fr;
+            }
+
+            .section-large-text-inner h2 {
+                font-size: 2rem;
+            }
+
+            .section-large-text-inner h3 {
+                font-size: 1.5rem;
+            }
+
+            .developer-contact {
+                padding: 1rem;
+            }
+
+            .developer-contact h3 {
+                font-size: 1.3rem;
+            }
+        }
+
+        /* Accessibility improvements */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode">
+        <i class="fas fa-moon moon" aria-hidden="true"></i>
+        <i class="fas fa-sun sun" aria-hidden="true"></i>
+    </button>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="#" class="logo">
+                <i class="fas fa-headphones" aria-hidden="true"></i>
+                <span>HeadphoneHub</span>
+            </a>
+            <button class="hamburger" id="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
+                <i class="fas fa-bars" aria-hidden="true"></i>
+                <span class="sr-only">Menu</span>
+            </button>
+            <ul class="nav" id="nav">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#gallery">Gallery</a></li>
+                <li><a href="#testimonials">Testimonials</a></li>
+                <li><a href="#footer">Contact</a></li>
+                <li><a href="https://akarshyash.github.io/My_Digital-Card/" class="btn" target="_blank" rel="noopener noreferrer">Developer Card</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Showcase -->
+    <section id="home" class="section-showcase">
+        <div class="container">
+            <div class="showcase-content fade-in">
+                <h1>Experience Sound Like Never Before</h1>
+                <p>
+                    Immerse yourself in crystal-clear audio with our premium headphones. 
+                    Engineered for perfection, designed for comfort, and built to last.
+                </p>
+                <a href="https://akarshyash.github.io/My_Digital-Card/" class="btn" target="_blank" rel="noopener noreferrer">Connect with Developer</a>
+            </div>
+            <div class="showcase-image fade-in">
+                <img src="https://i.ibb.co/ydpFGg6/showcase.png" alt="Premium wireless headphones with sleek design">
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="section-features">
+        <div class="container">
+            <h2 class="section-title">Why Choose HeadphoneHub?</h2>
+            <div class="features-grid">
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <i class="fas fa-volume-up" aria-hidden="true"></i>
+                    </div>
+                    <h3>Immersive Sound</h3>
+                    <p>Experience 360° spatial audio with our advanced acoustic technology.</p>
+                    <a href="https://akarshyash.github.io/My_Digital-Card/" class="btn btn-small" target="_blank" rel="noopener noreferrer">Learn More</a>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <i class="fas fa-battery-full" aria-hidden="true"></i>
+                    </div>
+                    <h3>All-Day Battery</h3>
+                    <p>Up to 40 hours of continuous playback on a single charge.</p>
+                    <a href="https://akarshyash.github.io/My_Digital-Card/" class="btn btn-small" target="_blank" rel="noopener noreferrer">Learn More</a>
+                </div>
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                    </div>
+                    <h3>Active Noise Cancellation</h3>
+                    <p>Block out distractions and focus on your music with ANC technology.</p>
+                    <a href="https://akarshyash.github.io/My_Digital-Card/" class="btn btn-small" target="_blank" rel="noopener noreferrer">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Large Text -->
+    <section class="section-large-text">
+        <div class="section-large-text-inner fade-in">
+            <h3>Premium Audio Experience</h3>
+            <h2>Hear Every Detail</h2>
+            <p>
+                Our headphones are engineered to deliver unparalleled audio clarity, 
+                allowing you to hear every nuance in your favorite tracks.
+            </p>
+            <a href="https://akarshyash.github.io/My_Digital-Card/" class="btn btn-center" target="_blank" rel="noopener noreferrer">Meet the Developer</a>
+        </div>
+    </section>
+
+    <!-- Gallery -->
+    <section id="gallery" class="section-gallery">
+        <div class="container">
+            <h2 class="section-title">Explore Our Collection</h2>
+            <div class="gallery">
+                <div class="gallery-item fade-in">
+                    <img src="https://images.unsplash.com/photo-1619113026857-7aa017691b1f?q=80&w=1887" alt="Person wearing black headphones in a studio">
+                </div>
+                <div class="gallery-item fade-in">
+                    <img src="https://images.unsplash.com/photo-1509098681029-b45e9c845022?q=80&w=2070" alt="Close-up of premium headphones on a table">
+                </div>
+                <div class="gallery-item fade-in">
+                    <img src="https://images.unsplash.com/photo-1620578077783-33e254311182?w=500" alt="White headphones with modern design">
+                </div>
+                <div class="gallery-item fade-in">
+                    <img src="https://images.unsplash.com/photo-1545127398-14699f92334b?q=80&w=1935" alt="Person enjoying music with headphones in nature">
+                </div>
+                <div class="gallery-item fade-in">
+                    <img src="https://images.unsplash.com/photo-1545127398-5aae47194b22?q=80&w=1935" alt="Headphones case and accessories">
+                </div>
+            </div>
+            <div class="gallery-actions">
+                <a href="https://akarshyash.github.io/My_Digital-Card/" class="btn" target="_blank" rel="noopener noreferrer">View Developer Portfolio</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section id="testimonials" class="section-testimonials">
+        <div class="container">
+            <h2 class="section-title">What Our Customers Say</h2>
+            <div class="testimonials-container">
+                <div class="testimonial fade-in">
+                    <p class="testimonial-text">
+                        "These headphones have completely transformed my listening experience. 
+                        The sound quality is exceptional and the comfort is unmatched."
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-image">
+                            <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="Sarah Johnson">
+                        </div>
+                        <div class="author-info">
+                            <h4>Sarah Johnson</h4>
+                            <p>Music Producer</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonials-actions">
+                <a href="https://akarshyash.github.io/My_Digital-Card/" class="btn" target="_blank" rel="noopener noreferrer">Contact Developer</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer id="footer" class="section-footer">
+        <div class="container">
+            <div class="footer-container">
+                <div class="footer-col">
+                    <h3>About HeadphoneHub</h3>
+                    <p>We create premium audio products that deliver exceptional sound quality and comfort.</p>
+                    <div class="social-links">
+                        <a href="https://akarshyash.github.io/My_Digital-Card/" aria-label="Visit Developer's Digital Card" target="_blank" rel="noopener noreferrer">
+                            <i class="fas fa-user" aria-hidden="true"></i>
+                            <span class="sr-only">Developer Card</span>
+                        </a>
+                        <a href="https://linkedin.com" aria-label="Visit our LinkedIn page" target="_blank" rel="noopener noreferrer">
+                            <i class="fab fa-linkedin" aria-hidden="true"></i>
+                            <span class="sr-only">LinkedIn</span>
+                        </a>
+                        <a href="https://github.com/AkarshYash" aria-label="Visit Developer's GitHub" target="_blank" rel="noopener noreferrer">
+                            <i class="fab fa-github" aria-hidden="true"></i>
+                            <span class="sr-only">GitHub</span>
+                        </a>
+                        <a href="mailto:chaturvediakarsh51@gmail.com" aria-label="Email the Developer">
+                            <i class="fas fa-envelope" aria-hidden="true"></i>
+                            <span class="sr-only">Email</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h3>Quick Links</h3>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#gallery">Gallery</a></li>
+                        <li><a href="#testimonials">Testimonials</a></li>
+                        <li><a href="https://akarshyash.github.io/My_Digital-Card/" target="_blank" rel="noopener noreferrer">Developer Card</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Support</h3>
+                    <ul>
+                        <li><a href="mailto:chaturvediakarsh51@gmail.com">Contact Developer</a></li>
+                        <li><a href="https://akarshyash.github.io/My_Digital-Card/" target="_blank" rel="noopener noreferrer">FAQs</a></li>
+                        <li><a href="https://akarshyash.github.io/My_Digital-Card/" target="_blank" rel="noopener noreferrer">Shipping Info</a></li>
+                        <li><a href="https://akarshyash.github.io/My_Digital-Card/" target="_blank" rel="noopener noreferrer">Returns</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h3>Newsletter</h3>
+                    <p>Subscribe to get updates on new products and special offers.</p>
+                    <form class="email-form">
+                        <input type="email" placeholder="Your email address" required aria-label="Your email address">
+                        <button type="submit" aria-label="Subscribe to newsletter">
+                            <i class="fas fa-paper-plane" aria-hidden="true"></i>
+                            <span class="sr-only">Subscribe</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Developer Contact Section -->
+            <div class="developer-contact fade-in">
+                <h3>Project Developed By</h3>
+                <p><strong>Akarsh Chaturvedi</strong></p>
+                <p>Full Stack Developer & Web Designer</p>
+                <div class="contact-buttons">
+                    <a href="https://akarshyash.github.io/My_Digital-Card/" class="contact-btn" target="_blank" rel="noopener noreferrer">
+                        <i class="fas fa-external-link-alt"></i> View Digital Card
+                    </a>
+                    <a href="mailto:chaturvediakarsh51@gmail.com" class="contact-btn">
+                        <i class="fas fa-envelope"></i> Email Me
+                    </a>
+                </div>
+                <p class="developer-email">
+                    Email: <a href="mailto:chaturvediakarsh51@gmail.com">chaturvediakarsh51@gmail.com</a>
+                </p>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2025 AKARSH All rights reserved. | Developed by <a href="https://akarshyash.github.io/My_Digital-Card/" target="_blank" rel="noopener noreferrer">Akarsh Chaturvedi</a></p>
+                <p>Contact: <a href="mailto:chaturvediakarsh51@gmail.com">chaturvediakarsh51@gmail.com</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Theme Toggle Functionality
+        const themeToggle = document.getElementById('themeToggle');
+        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+        
+        // Check for saved theme or prefered scheme
+        const currentTheme = localStorage.getItem('theme') || 
+                           (prefersDarkScheme.matches ? 'dark' : 'light');
+        
+        // Apply the current theme
+        document.body.setAttribute('data-theme', currentTheme);
+        
+        // Toggle theme
+        themeToggle.addEventListener('click', function() {
+            let theme = document.body.getAttribute('data-theme');
+            theme = theme === 'light' ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+        });
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Mobile menu toggle
+        const hamburger = document.getElementById('hamburger');
+        const nav = document.getElementById('nav');
+
+        hamburger.addEventListener('click', function() {
+            const isExpanded = hamburger.getAttribute('aria-expanded') === 'true';
+            nav.classList.toggle('active');
+            hamburger.setAttribute('aria-expanded', !isExpanded);
+            hamburger.innerHTML = nav.classList.contains('active') ? 
+                '<i class="fas fa-times" aria-hidden="true"></i><span class="sr-only">Close menu</span>' : 
+                '<i class="fas fa-bars" aria-hidden="true"></i><span class="sr-only">Open menu</span>';
+        });
+
+        // Close mobile menu when clicking on a link
+        document.querySelectorAll('.nav a').forEach(link => {
+            link.addEventListener('click', () => {
+                nav.classList.remove('active');
+                hamburger.setAttribute('aria-expanded', 'false');
+                hamburger.innerHTML = '<i class="fas fa-bars" aria-hidden="true"></i><span class="sr-only">Open menu</span>';
+            });
+        });
+
+        // Fade in animation on scroll
+        const fadeElements = document.querySelectorAll('.fade-in');
+
+        const appearOptions = {
+            threshold: 0.1,
+            rootMargin: "0px 0px -100px 0px"
+        };
+
+        const appearOnScroll = new IntersectionObserver(function(entries, appearOnScroll) {
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                entry.target.classList.add('appear');
+                appearOnScroll.unobserve(entry.target);
+            });
+        }, appearOptions);
+
+        fadeElements.forEach(element => {
+            appearOnScroll.observe(element);
+        });
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                if (targetId === '#') return;
+                
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    window.scrollTo({
+                        top: targetElement.offsetTop - 80,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
